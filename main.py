@@ -2,6 +2,7 @@ import os
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
+from openpyxl import load_workbook
 
 
 class File:
@@ -16,9 +17,22 @@ class File:
         return 'Cl2000 Log File'
 
 
+def create_dict():
+    wb = load_workbook(filename='j1939_pgn_list.xlsx')
+    ws = wb.active
+
+    dictionary = {}
+    for row in range(3, ws.max_row + 1):
+        key = ws.cell(row, 2).value
+        value = ws.cell(row, 3).value
+        dictionary[key] = value
+
+    return dictionary
+
+
 def get_path():
     data_log.path = filedialog.askopenfilename(filetypes=(("txt", "*.txt"), ("all files", "*.*")))
-    file_path_label.config(text=data_log.path)
+    file_path_label.config(text=data_log.path[-65:])
     get_content()
 
 
@@ -56,10 +70,13 @@ def get_content():
     dec_set.sort()
 
     str_list = ''
-    for index in range(1, len(dec_set)):
-        # print('{' + str(dec_set[index]) + ',kvFalse}/* Placeholder */')
-        str_list += '{' + str(dec_set[index]) + ',kvFalse}/* Placeholder */\n'
+    for index in dec_set:
+        if index in pgn_dict:
+            str_list += '{' + str(index) + ',kvFalse}/* ' + pgn_dict[index][:33] + ' */\n'
+        else:
+            str_list += '{' + str(index) + ',kvFalse}/* Proprietary */\n'
 
+    output_text.delete("1.0", "end")
     data_log.str_list = str_list
     output_text.insert('end', str_list)
 
@@ -78,48 +95,46 @@ data_log = File()
 # Tkinter Window Setup
 window = Tk()
 
+# Create Variables
 current_dir = os.getcwd()
+pgn_dict = create_dict()
+
 # Set window properties
 window.title('CL2000 Log Unloader')
-window.geometry("500x700")
+# window.geometry("455x675")
 window.iconbitmap(current_dir + '/images/favicon.png')
 
 
 # Configure Grid
 window.columnconfigure(0, weight=1)
-window.columnconfigure(1, weight=2)
-window.columnconfigure(2, weight=1)
-
 
 # Create Labels for browsing Files and Displaying File Path
-label_file_explorer = Label(window, text="Decode CL2000 Log Files", width=50, height=2)
-label_file_explorer.grid(column=0, row=0, columnspan=3)
+label_file_explorer = Label(window, text="Decode CL2000 Log Files", width=30, height=2)
+label_file_explorer.grid(column=0, row=0)
 
-path_label = Label(window, text='File Path:')
-path_label.grid(column=0, row=1, sticky=E)
+version_label = Label(window, text="Version 1.1.0", width=30, height=2)
+version_label.grid(column=0, row=5)
 
 file_path_label = Label(window, text=data_log.path, background='white', width=52, borderwidth=1, relief='sunken')
-file_path_label.grid(column=1, row=1, pady=2, ipady=3)
+file_path_label.grid(column=0, row=1, sticky=W, pady=2, padx=5, ipady=3)
 
+# Output box for converter PGNs
+output_text = Text(window, width=55, height=35)
+output_text.grid(column=0, row=2, padx=5, columnspan=3)
 
 # Setup Buttons
 # Browse Button
-button_explore = Button(window, text="Browse", command=get_path)
-button_explore.grid(column=2, row=1, pady=2, padx=10, sticky=W)
-
-# Output box for converter PGNs
-output_text = Text(window, width=45, height=35)
-output_text.grid(column=1, row=2)
+button_explore = Button(window, text="Browse Files", command=get_path)
+button_explore.grid(column=0, row=1, sticky=E, padx=5)
 
 # Save Button
 button_save_list = Button(window, text="Save", command=save_to_file)
-button_save_list.grid(column=1, row=5, sticky=W, pady=5, padx=5, ipady=5, ipadx=15)
+button_save_list.grid(column=0, row=5, pady=5, padx=5, sticky=W, ipady=5, ipadx=30)
 
 # Exit Button
 button_exit = Button(window, text="Exit", command=window.destroy)
-button_exit.grid(column=1, row=5, sticky=E, pady=5, padx=5, ipady=5, ipadx=15)
+button_exit.grid(column=0, row=5, pady=5, padx=5, sticky=E, ipady=5, ipadx=30)
 
+window.resizable(False, False)
 # Let the window wait for any events
 window.mainloop()
-
-# TODO: Add Names of PGNs instead of Placeholder
