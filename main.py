@@ -71,10 +71,11 @@ def get_content():
 
     str_list = ''
     for index in dec_set:
-        if index in pgn_dict:
-            str_list += '{' + str(index) + ',kvFalse}/* ' + pgn_dict[index][:33] + ' */\n'
-        else:
-            str_list += '{' + str(index) + ',kvFalse}/* Proprietary */\n'
+        if index != 0:
+            if index in pgn_dict:
+                str_list += '{' + str(index) + ',kvFalse}/* ' + pgn_dict[index][:33] + ' */\n'
+            else:
+                str_list += '{' + str(index) + ',kvFalse}/* Proprietary */\n'
 
     output_text.delete("1.0", "end")
     data_log.str_list = str_list
